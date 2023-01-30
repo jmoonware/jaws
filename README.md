@@ -7,7 +7,8 @@ python -m venv jaws-env
 
 Then:
 
-jaws-env\Scripts\activate
+jaws-env\Scripts\activate (Windows)
+source jaws-env/bin/activate (Linux)
 
 Clone the repos via:
 
