@@ -7,18 +7,28 @@ python -m venv jaws-env
 
 Then:
 
-jaws-env\Scripts\activate (Windows)
-source jaws-env/bin/activate (Linux)
+Windows:
+'''
+jaws-env\Scripts\activate
+'''
 
+Linux:
+'''
+source jaws-env/bin/activate 
+'''
 Clone the repos via:
 
+'''
 git clone https://github.com/jmoonware/jaws
 git clone https://github.com/jmoonware/jaws_data
 git clone https://github.com/jmoonware/jaws_arduino
+'''
 
 After that install from requirements.txt in the jaws project:
 
+'''
 pip install -r requirements.txt
+'''
 
 The basic pipeline is:
 
