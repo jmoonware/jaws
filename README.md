@@ -3,16 +3,18 @@ Realistic Halloween skeleton jaw automation from audio/video
 
 Best to create a new python venv via:
 
+```
 python -m venv jaws-env
+```
 
 Then:
 
-Windows:
+- Windows:
 ```
 jaws-env\Scripts\activate
 ```
 
-Linux:
+- Linux:
 ```
 source jaws-env/bin/activate 
 ```
