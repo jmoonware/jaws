@@ -222,7 +222,9 @@ else:
 	sample_t=np.arange(0,len(data))/rate
 	n_resamples=int(len(data)*actual_audio_sample_rate/rate)
 	resample_audio_t=np.arange(0,n_resamples)/actual_audio_sample_rate
-	resample_audio=np.interp(resample_audio_t,sample_t,data)[resample_audio_t <= time_max]
+	dslope=((1<<audio_bits)-1)/(np.max(data)-np.min(data))
+	norm_data=dslope*(data-np.min(data)) # 0-max audio
+	resample_audio=np.interp(resample_audio_t,sample_t,norm_data)[resample_audio_t <= time_max]
 	
 	# load motion file - should be two columns of time vs. pixel position - will renormalize below
 	# probably something like 29.xxx Hz
