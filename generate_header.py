@@ -45,7 +45,8 @@ parser.add_argument('-o','--output_file', help="Name of output .h header file",d
 parser.add_argument('-tp','--test_pattern',help="If set, generate test pattern",default=False,required=False,action='store_true')
 parser.add_argument('-p','--show_plots',help="If set, plot some things",default=False,required=False,action='store_true')
 parser.add_argument('-tmax','--time_max',help="Maximum time (s) to use",default=3600,required=False)
-
+parser.add_argument('-ma','--motor_amplitude_fraction',help="Fraction of available motor range to use",default=0.75,required=False)
+parser.add_argument('-mo','--motor_offset_fraction',help="Fraction of motor for min motion signal",default=0.25,required=False)
 
 command_line_args=vars(parser.parse_args(sys.argv[1:]))
 wav_file=command_line_args['wav_file']
@@ -77,8 +78,8 @@ motor_pulse_max_ms = 2 # ms
 motor_pwm_bits = 12 # at 8 us dead-band in 1.5 ms range = 187 values, but too low a resolution can cause jittering
 motor_update_sampling_rate=50 # Hz, how often to update motor pulse width (anything over 50 Hz is pointless)
 
-motor_amplitude_fraction=0.5 # [0,1], 0.5 = 50% p-p range of motion
-motor_amplitude_offset=0.5 # [0,1], 0.5 = middle of range
+motor_amplitude_fraction=float(command_line_args['motor_amplitude_fraction']) # [0,1], 0.5 = 50% p-p range of motion
+motor_offset_fraction=float(command_line_args['motor_offset_fraction']) # [0,1], 0.5 = min of motion value is middle of motor range
 
 # calculate a few things for the pwm counters on the microprocessor
 # this is the maximum rate we can send audio pwm pulses given the desired amplitude resolution
@@ -150,6 +151,7 @@ if generate_test_pattern:
 	# test pattern parameters
 	# sweeps a tone from min to max freq and back 
 	# simultaneously sweeps motor from min to max angle
+	msg.append("// Generating test pattern")
 	min_freq=50
 	max_freq=1000 # Hz
 	sweep_period = 0.5 # seconds
@@ -193,9 +195,15 @@ if generate_test_pattern:
 	n_resamples=int(len(resample_audio_t)*actual_motor_sampling_rate/actual_audio_sample_rate)
 	# these are the output motion values
 	resample_motion_t = np.arange(0,n_resamples)/actual_motor_sampling_rate
-	motor_offset=motor_amplitude_offset*(pwm_max_count-pwm_min_count)+pwm_min_count
+	motor_offset=motor_offset_fraction*(pwm_max_count-pwm_min_count)+pwm_min_count
 	motor_slope=(pwm_max_count-pwm_min_count)*motor_amplitude_fraction
-	resample_motion = np.array(motor_slope*np.interp(resample_motion_t,resample_audio_t,repeat_amps)+motor_offset,dtype=int)[resample_motion_t <= time_max]
+	# resample onto actual time samples and clip if out of range
+	remap=motor_slope*np.interp(resample_motion_t,resample_audio_t,repeat_amps)+motor_offset
+	clip_max=(remap>pwm_max_count)
+	clip_min=(remap<pwm_min_count)
+	remap[clip_max]=pwm_max_count
+	remap[clip_min]=pwm_min_count
+	resample_motion = np.array(remap,dtype=int)[resample_motion_t <= time_max]
 	
 else:
 	msg.append("// Audio file is {0}".format(wav_file))
@@ -233,7 +241,7 @@ else:
 		n_resamples=int(len(motion_t)*actual_motor_sampling_rate/video_frame_rate)
 		# these are the output motion values
 		resample_motion_t = np.arange(0,n_resamples)/actual_motor_sampling_rate
-		motor_offset=motor_amplitude_offset*(pwm_max_count-pwm_min_count)+pwm_min_count
+		motor_offset=motor_offset_fraction*(pwm_max_count-pwm_min_count)+pwm_min_count
 		motor_slope=((pwm_max_count-pwm_min_count)/(np.max(motion_data)-np.min(motion_data)))*motor_amplitude_fraction
 		resample_motion = np.interp(resample_motion_t,motion_t,motor_slope*motion_data+motor_offset)[resample_motion_t <=time_max]		
 	else:
