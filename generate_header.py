@@ -243,7 +243,12 @@ else:
 		resample_motion_t = np.arange(0,n_resamples)/actual_motor_sampling_rate
 		motor_offset=motor_offset_fraction*(pwm_max_count-pwm_min_count)+pwm_min_count
 		motor_slope=((pwm_max_count-pwm_min_count)/(np.max(motion_data)-np.min(motion_data)))*motor_amplitude_fraction
-		resample_motion = np.interp(resample_motion_t,motion_t,motor_slope*motion_data+motor_offset)[resample_motion_t <=time_max]		
+		remap=motor_slope*(motion_data-min(motion_data))+motor_offset
+		clip_max=(remap>pwm_max_count)
+		clip_min=(remap<pwm_min_count)
+		remap[clip_max]=pwm_max_count
+		remap[clip_min]=pwm_min_count
+		resample_motion = np.interp(resample_motion_t,motion_t,remap)[resample_motion_t <=time_max]		
 	else:
 		sys.stderr.write("Can't find {0} - end\n".format(motion_file))
 		sys.exit(1)
