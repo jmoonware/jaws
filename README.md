@@ -1,6 +1,10 @@
 # jaws
 Realistic Halloween skeleton jaw automation from audio/video 
 
+This project translates a video of someone speaking words into a real-time signal which can drive a servo motor based on the detected jaw position (hence the name of the project, 'jaws')
+
+Here are some step-by-step instructions on how to use:
+
 Best to create a new python venv via:
 
 ```
