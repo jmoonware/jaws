@@ -3,8 +3,15 @@ import os,sys
 import numpy as np
 import matplotlib.pyplot as plt
 import argparse
+import keyboard
 
 project_path=r'..'
+
+
+
+last_landmarks=None
+num_exceptions=0
+num_frames=0
 
 # command line arguments
 parser = argparse.ArgumentParser(
@@ -53,6 +60,9 @@ facemark = cv2.face.createFacemarkLBF()
 facemark.loadModel(facemark_model)
 
 def detect_and_show(frame):
+	global last_landmarks
+	global num_exceptions
+	global num_frames
 	frame_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 	frame_gray = cv2.equalizeHist(frame_gray)
 	# this is where we detect the face area
@@ -66,8 +76,18 @@ def detect_and_show(frame):
 		cv2.rectangle(frame, ul, br, (0,255,0))
 
 	# run landmark detector on the faces that we found (usually one):
-	ok, landmarks = facemark.fit(frame_gray, faces[-1])
-	facemarks.append(landmarks)
+	num_frames+=1
+	try:
+		ok, landmarks = facemark.fit(frame_gray, faces[-1])
+		facemarks.append(landmarks)
+		last_landmarks=landmarks
+	except Exception as e:
+		num_exceptions+=1
+		facemarks.append(last_landmarks)
+		print("*** Exception {0} at frame {1}".format(num_exceptions,num_frames))
+		print(e)
+		return
+
 	for landmark in landmarks:
 		for ip, p in enumerate(landmark[0]):
 			c=(0,255,255) # yellow
@@ -103,6 +123,9 @@ for fn in range(frame_start,frame_end):
 	
 	detect_and_show(frame)
 	
+	if keyboard.is_pressed('q'):
+		break
+		
 	if cv2.waitKey(10)==27: # check escape with 10 ms wait
 		break
 

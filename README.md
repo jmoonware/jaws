@@ -48,7 +48,7 @@ Example using the test data (while in the 'jaws' directory):
 python detect_motion.py -vf ..\jaws_data\test_raw.mp4
 ```
 
-If you get bored, hit the escape key to stop and save the motion data that got extracted. Should create a 'motion.txt' file in the current 'jaws' directory, about 25 s worth of motion
+If you get bored, hit the 'q' key to stop and save the motion data that got extracted. Should create a 'motion.txt' file in the current 'jaws' directory, about 25 s worth of motion
 
 Next, (optional) extract the audio from the test_raw.mp4 file via
 
