@@ -226,8 +226,10 @@ else:
 	norm_data=dslope*(data-np.min(data)) # 0-max audio
 	resample_audio=np.interp(resample_audio_t,sample_t,norm_data)[resample_audio_t <= time_max]
 	
-	# load motion file - should be two columns of time vs. pixel position - will renormalize below
+	# load motion file - should be two columns of time vs. pixel position 
+	# - will renormalize below
 	# probably something like 29.xxx Hz
+	# Note that there can be dropped frames
 	if os.path.isfile(motion_file):
 		with open(motion_file,'r') as f:
 			lines=f.readlines()
@@ -239,8 +241,13 @@ else:
 		motion_t=np.array(motion_t)
 		motion_data=np.array(motion_data)
 		# resample to actual update freq
-		video_frame_rate=1/(motion_t[1]-motion_t[0])
-		n_resamples=int(len(motion_t)*actual_motor_sampling_rate/video_frame_rate)
+		# assumes that the frames closest in time are the actual update freq 
+		video_frame_rate=np.min(1/(motion_t[1:]-motion_t[:-1]))
+
+		# rather than len(motion_t)/video_frame_rate, use the actual max time 
+		# in the file - there can be dropped samples so rate*samples may 
+		# not be correct!
+		n_resamples=int(max(motion_t)*actual_motor_sampling_rate)
 		# these are the output motion values
 		resample_motion_t = np.arange(0,n_resamples)/actual_motor_sampling_rate
 		motor_offset=motor_offset_fraction*(pwm_max_count-pwm_min_count)+pwm_min_count

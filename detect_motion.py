@@ -3,7 +3,7 @@ import os,sys
 import numpy as np
 import matplotlib.pyplot as plt
 import argparse
-import keyboard
+#import keyboard
 
 project_path=r'..'
 
@@ -86,9 +86,11 @@ def detect_and_show(frame):
 		facemarks.append(last_landmarks)
 		print("*** Exception {0} at frame {1}".format(num_exceptions,num_frames))
 		print(e)
+	
+	# if we haven't detected any landmarks yet, then bail
+	if not last_landmarks:
 		return
-
-	for landmark in landmarks:
+	for landmark in last_landmarks:
 		for ip, p in enumerate(landmark[0]):
 			c=(0,255,255) # yellow
 			if ip in POI_Upper:
@@ -108,6 +110,7 @@ if not os.path.isfile(video_file):
 rgb=cv2.VideoCapture(video_file)	
 frame_rate=rgb.get(cv2.CAP_PROP_FPS)
 frame_count=rgb.get(cv2.CAP_PROP_FRAME_COUNT)
+print("Frame Rate = {0:.4f} Hz, Frame Count = {1}, T = {2:.3f} s".format(frame_rate,frame_count,frame_count/frame_rate))
 
 if frame_end < 0:
 	frame_end=int(frame_count)
@@ -123,8 +126,8 @@ for fn in range(frame_start,frame_end):
 	
 	detect_and_show(frame)
 	
-	if keyboard.is_pressed('q'):
-		break
+#	if keyboard.is_pressed('q'):
+#		break
 		
 	if cv2.waitKey(10)==27: # check escape with 10 ms wait
 		break
