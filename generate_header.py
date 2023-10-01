@@ -45,8 +45,8 @@ parser.add_argument('-o','--output_file', help="Name of output .h header file",d
 parser.add_argument('-tp','--test_pattern',help="If set, generate test pattern",default=False,required=False,action='store_true')
 parser.add_argument('-p','--show_plots',help="If set, plot some things",default=False,required=False,action='store_true')
 parser.add_argument('-tmax','--time_max',help="Maximum time (s) to use",default=3600,required=False)
-parser.add_argument('-ma','--motor_amplitude_fraction',help="Fraction of available motor range to use",default=0.75,required=False)
-parser.add_argument('-mo','--motor_offset_fraction',help="Fraction of motor for min motion signal",default=0.25,required=False)
+parser.add_argument('-ma','--motor_amplitude_fraction',help="Fraction of available motor range to use",default=1,required=False)
+parser.add_argument('-mo','--motor_offset_fraction',help="Fraction of motor for min motion signal",default=0,required=False)
 
 command_line_args=vars(parser.parse_args(sys.argv[1:]))
 wav_file=command_line_args['wav_file']
@@ -240,6 +240,10 @@ else:
 			motion_data.append(float(l.split()[1]))
 		motion_t=np.array(motion_t)
 		motion_data=np.array(motion_data)
+		motion_data=motion_data-np.mean(motion_data)
+		# normalize to 99'th percentile, with possible scaling factor
+		motion_data=motor_amplitude_fraction*motion_data/np.percentile(motion_data,99)
+			
 		# resample to actual update freq
 		# assumes that the frames closest in time are the actual update freq 
 		video_frame_rate=np.min(1/(motion_t[1:]-motion_t[:-1]))
@@ -249,14 +253,14 @@ else:
 		# not be correct!
 		n_resamples=int(max(motion_t)*actual_motor_sampling_rate)
 		# these are the output motion values
+		pwm_amp = (pwm_max_count-pwm_min_count)/2
+		pwm_offset = (pwm_max_count+pwm_min_count)/2 + motor_offset_fraction*pwm_amp
 		resample_motion_t = np.arange(0,n_resamples)/actual_motor_sampling_rate
-		motor_offset=motor_offset_fraction*(pwm_max_count-pwm_min_count)+pwm_min_count
-		motor_slope=((pwm_max_count-pwm_min_count)/(np.max(motion_data)-np.min(motion_data)))*motor_amplitude_fraction
-		remap=motor_slope*(motion_data-min(motion_data))+motor_offset
-		clip_max=(remap>pwm_max_count)
-		clip_min=(remap<pwm_min_count)
-		remap[clip_max]=pwm_max_count
-		remap[clip_min]=pwm_min_count
+		remap = pwm_amp*motion_data + pwm_offset
+		clip_max = (remap>pwm_max_count)
+		clip_min = (remap<pwm_min_count)
+		remap[clip_max] = pwm_max_count
+		remap[clip_min] = pwm_min_count
 		resample_motion = np.interp(resample_motion_t,motion_t,remap)[resample_motion_t <=time_max]		
 	else:
 		sys.stderr.write("Can't find {0} - end\n".format(motion_file))
@@ -269,6 +273,8 @@ if show_plots:
 	ax1.plot(resample_audio_t[resample_audio_t<=time_max],resample_audio,color='green')
 	ax2=ax1.twinx()
 	ax2.plot(resample_motion_t[resample_motion_t<=time_max],resample_motion,color='red',marker='o')
+	ax2.plot(resample_motion_t[resample_motion_t<=time_max],np.full(len(resample_motion_t[resample_motion_t<=time_max]),pwm_max_count),color='gray',linestyle='--')
+	ax2.plot(resample_motion_t[resample_motion_t<=time_max],np.full(len(resample_motion_t[resample_motion_t<=time_max]),pwm_min_count),color='gray',linestyle='--')
 	plt.show()
 
 def array_type(bits):
