@@ -71,16 +71,20 @@ def detect_and_show(frame):
 	global num_exceptions
 	global num_frames
 	global frame_rate
+
+	num_frames+=1
 	frame_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 	frame_gray = cv2.equalizeHist(frame_gray)
 	# this is where we detect the face area
 	# x,y,w,h apparently returned for the face
 	faces.append(face_cascade.detectMultiScale(frame_gray)) # can be multiple
-
 	# always take the largest face detected
 	face_sizes = []
 	for f in faces[-1]:
 		face_sizes.append(f[2]*f[3])
+	if len(face_sizes)==0: # nothing detected
+		facemarks.append(last_landmarks)
+		return(frame)
 	max_face.append(np.argmax(face_sizes))
 	if len(faces[-1]) > max_face[-1] and len(faces[-1][0])==4:
 		# upper left
@@ -90,7 +94,7 @@ def detect_and_show(frame):
 		cv2.rectangle(frame, ul, br, (0,255,0),2)
 
 	# run landmark detector on the faces that we found (usually one):
-	num_frames+=1
+
 	try:
 		ok, landmarks = facemark.fit(frame_gray, faces[-1])
 #		print(len(landmarks),max_face)
