@@ -32,9 +32,13 @@ parser.add_argument('-p','--show_plots',help="If set, plot some stuff to screen"
 parser.add_argument('-fs','--frame_start',help="If set, frame number to start analyis",default=0,required=False)
 parser.add_argument('-fe','--frame_end',help="If set, frame number to end analysis",default=-1,required=False)
 
+parser.add_argument('-ov','--output_video', help="Annotated .mp4 video file",default='',required=False)
+
+
 command_line_args=vars(parser.parse_args(sys.argv[1:]))
 video_file=command_line_args['video_file']
 output_file=command_line_args['output_file']
+output_video_file = command_line_args['output_video']
 show_plots=bool(command_line_args['show_plots'])
 frame_start=int(command_line_args['frame_start'])
 frame_end=int(command_line_args['frame_end'])
@@ -116,6 +120,7 @@ def detect_and_show(frame):
                    1, (255,255,0), 3, cv2.LINE_AA)
 
 	cv2.imshow('output',annotated_frame)
+	return annotated_frame
 
 # here is where the main loop starts
 
@@ -145,6 +150,16 @@ if frame_end < 0:
 elif frame_end > frame_count:
 	frame_end=int(frame_count)
 
+import platform
+four_cc = None
+recorder=None
+
+if len(output_video_file) > 0:
+	if platform.system() == "Windows":
+		four_cc = cv2.VideoWriter_fourcc(*"mp4v")
+	if four_cc: 
+		recorder = cv2.VideoWriter(output_video_file, four_cc, frame_rate, (int(f_width), int(f_height)))
+
 # Loop over frames and display detection results
 for fn in range(frame_start,frame_end):
 	ret, frame = rgb.read()
@@ -152,7 +167,10 @@ for fn in range(frame_start,frame_end):
 		print('No frame at frame number {0} of {1}!'.format(fn,frame_count))
 		break
 	
-	detect_and_show(frame)
+	annotated_frame = detect_and_show(frame)
+	
+	if recorder:
+		recorder.write(annotated_frame)
 	
 #	if keyboard.is_pressed('q'):
 #		break
@@ -217,4 +235,18 @@ jlf_name = os.path.splitext(output_file)[0]+"_jawline.txt"
 with open(jlf_name,'w') as f:
 	for x,y in zip(idx_jawline,delta_y_jawline):
 		f.write("{0:.6f}\t{1:.1f}\n".format((x+frame_start)/frame_rate,y))
+
+if len(delta_y) == len(delta_y_jawline):		
+	filtered_name = os.path.splitext(output_file)[0]+"_filtered.txt"
+	delta_y=np.array(delta_y)
+	delta_y_jawline=np.array(delta_y_jawline)
+	avedat = delta_y-np.mean(delta_y)+delta_y_jawline-np.mean(delta_y_jawline)
+	# slight LPF with convolution
+	cavdat = np.convolve(avedat,np.array([0.1,0.25,0.5,0.25,0.1]),mode='same')
+	with open(filtered_name,'w') as f:
+		for x,y in zip(idx_jawline,cavdat):
+			f.write("{0:.6f}\t{1:.1f}\n".format((x+frame_start)/frame_rate,y))	
+else:
+	print("Can't created filtered file - size mismatch")
+
 

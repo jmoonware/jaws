@@ -70,8 +70,8 @@ Then, generate the header file via:
 python generate_header.py -wf ..\jaws_data\output20_u8_1.wav -mf motion.txt -tmax 10
 ```
 
-The 'tmax' option limits the file to 10s of audio/motion
+The 'tmax' option limits the file to the specified number of seconds (here, 10s) of audio/motion
 
 Then, copy the generated 'jaws_include.h' file to the jaws_arduino\rp2040_jaws directory (a file with this name already exists so overwrite)
 
-Then open the Arduion IDE and compile\upload. Should work!
+Then open the Arduino IDE and compile\upload. Should work!
