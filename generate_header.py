@@ -270,11 +270,17 @@ else:
 
 if show_plots:
 	fig,ax1=plt.subplots()
-	ax1.plot(resample_audio_t[resample_audio_t<=time_max],resample_audio,color='green')
+	plts = []
+	plts.extend(ax1.plot(resample_audio_t[resample_audio_t<=time_max],resample_audio,color='green',label='Audio'))
 	ax2=ax1.twinx()
-	ax2.plot(resample_motion_t[resample_motion_t<=time_max],resample_motion,color='red',marker='o')
-	ax2.plot(resample_motion_t[resample_motion_t<=time_max],np.full(len(resample_motion_t[resample_motion_t<=time_max]),pwm_max_count),color='gray',linestyle='--')
-	ax2.plot(resample_motion_t[resample_motion_t<=time_max],np.full(len(resample_motion_t[resample_motion_t<=time_max]),pwm_min_count),color='gray',linestyle='--')
+	plts.extend(ax2.plot(resample_motion_t[resample_motion_t<=time_max],resample_motion,color='red',marker='o',label='Motion'))
+	plts.extend(ax2.plot(resample_motion_t[resample_motion_t<=time_max],np.full(len(resample_motion_t[resample_motion_t<=time_max]),pwm_max_count),color='gray',linestyle='dotted',label='{0:.1f} ms'.format(motor_pulse_max_ms)))
+	plts.extend(ax2.plot(resample_motion_t[resample_motion_t<=time_max],np.full(len(resample_motion_t[resample_motion_t<=time_max]),pwm_min_count),color='gray',linestyle='--',label='{0:.1f} ms'.format(motor_pulse_min_ms)))
+	ax1.set_ylabel("Audio Amp (8-bit)")
+	ax2.set_ylabel("Servo PWM Register")
+	# nothing is easy in matplotlib
+	ax1.legend(plts,[p.get_label() for p in plts])
+	ax1.set_xlabel("Time (s)")
 	plt.show()
 
 def array_type(bits):
